@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerion | Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'JetBrains Mono', monospace; }
+        .pulse-ring {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-300 min-h-screen p-6 md:p-12">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-b border-gray-800 pb-8">
+            <div>
+                <h1 class="text-4xl font-black text-white tracking-tighter">NERION <span class="text-blue-500">v0.2.0</span></h1>
+                <p class="text-gray-500 mt-2 uppercase text-xs tracking-widest font-bold">Pre-Execution Risk Infrastructure // Multi-Agent Interceptor</p>
+            </div>
+            
+            <div class="mt-6 md:mt-0 flex items-center bg-gray-900/50 border border-gray-800 rounded-full px-4 py-2">
+                <div class="relative flex h-3 w-3 mr-3">
+                    <span class="pulse-ring absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </div>
+                <span class="text-xs font-bold text-emerald-500 tracking-widest">SYSTEM OPERATIONAL</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-900/30 border border-gray-800 p-6 rounded-xl">
+                <p class="text-gray-500 text-xs font-bold uppercase mb-2">Interceptions (24h)</p>
+                <p class="text-3xl font-bold text-white">1,248</p>
+            </div>
+            <div class="bg-gray-900/30 border border-gray-800 p-6 rounded-xl">
+                <p class="text-gray-500 text-xs font-bold uppercase mb-2">Blocked Threats</p>
+                <p class="text-3xl font-bold text-red-500">42</p>
+            </div>
+            <div class="bg-gray-900/30 border border-gray-800 p-6 rounded-xl border-l-4 border-l-blue-500">
+                <p class="text-gray-500 text-xs font-bold uppercase mb-2">Shadow Executions</p>
+                <p class="text-3xl font-bold text-blue-400">114</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-900/20 border border-gray-800 rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div class="px-6 py-4 border-b border-gray-800 bg-gray-900/50 flex justify-between items-center">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400">Live Decision Feed</h2>
+                <span class="text-[10px] text-gray-600 italic">Auto-refreshing every 2.0s</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] uppercase tracking-widest text-gray-500 border-b border-gray-800">
+                            <th class="p-4 font-bold">Timestamp</th>
+                            <th class="p-4 font-bold">Agent Source</th>
+                            <th class="p-4 font-bold">Payload & Reasoning</th>
+                            <th class="p-4 font-bold">Risk Matrix</th>
+                            <th class="p-4 font-bold">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trace-table" class="text-sm">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchTraces() {
+            try {
+                const response = await fetch('/api/v1/traces');
+                const traces = await response.json();
+                const tbody = document.getElementById('trace-table');
+                tbody.innerHTML = '';
+
+                traces.forEach(trace => {
+                    const time = new Date(trace.timestamp).toLocaleTimeString([], { hour12: false });
+                    const isBlocked = trace.decision === 'BLOCK';
+                    
+                    // Style logic
+                    const riskColor = trace.risk_level === 'CRITICAL' || trace.risk_level === 'HIGH' ? 'text-red-500' : 'text-emerald-400';
+                    const badgeClass = isBlocked ? 
+                        'bg-red-500/10 text-red-500 border-red-500/30' : 
+                        'bg-emerald-500/10 text-emerald-500 border-emerald-500/30';
+
+                    // Detect Shadow Execution (Phase 6)
+                    const hasSandbox = trace.reason.includes("Sandbox Output");
+                    const sandboxBadge = hasSandbox ? 
+                        `<span class="ml-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Shadow Executed</span>` : '';
+
+                    const row = `
+                        <tr class="border-b border-gray-800/50 hover:bg-white/5 transition-all duration-200">
+                            <td class="p-4 text-gray-600 text-xs font-medium">${time}</td>
+                            <td class="p-4">
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                    <span class="text-blue-400 font-bold text-xs">${trace.agent_id}</span>
+                                </div>
+                            </td>
+                            <td class="p-4 max-w-xl">
+                                <div class="flex items-center mb-1">
+                                    <code class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] mr-2 border border-gray-700">${trace.action_type}</code>
+                                    <span class="text-gray-100 font-medium truncate">${trace.payload}</span>
+                                    ${sandboxBadge}
+                                </div>
+                                <div class="text-[10px] text-gray-500 leading-relaxed font-normal italic">
+                                    ${trace.reason}
+                                </div>
+                            </td>
+                            <td class="p-4">
+                                <div class="${riskColor} font-black text-base italic">
+                                    ${trace.risk_score} <span class="text-[10px] uppercase opacity-60 ml-1 font-bold">${trace.risk_level}</span>
+                                </div>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-3 py-1 rounded border text-[10px] font-black tracking-widest uppercase ${badgeClass}">
+                                    ${trace.decision}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Dashboard Sync Error:", error);
+            }
+        }
+
+        // Initialize Feed
+        fetchTraces();
+        setInterval(fetchTraces, 2000);
+    </script>
+</body>
+</html>
