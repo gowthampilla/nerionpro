@@ -1,4 +1,4 @@
-🛡️ Evalshq: Nerion Decision Infrastructure
+# 🛡️ Evalshq: Nerion Decision Infrastructure
 
 **The Enterprise Pre-Execution Risk Engine for Autonomous AI Agents.**
 
@@ -63,22 +63,3 @@ if decision["decision"] == "ALLOW":
 else:
     print(f"❌ Nerion Blocked: {decision['reason']}")
     print(f"🔍 Forensic Audit: {decision['simulation_result']['impact_report']}")
-📖 API ReferencePOST /api/v1/evaluateThe core evaluation endpoint for all agent proposals.Request Body (JSON)ParameterTypeRequiredDescriptionagent_idstringYesA unique identifier for the agent proposing the action.action_typestringYesThe type of execution (e.g., shell, python, sql).payloadstringYesThe exact command or code the agent intends to run.context_filesarrayNoA list of critical file paths (e.g., ["/app/.env"]) to inject into the sandbox to test for destructive impact.user_api_keystringYesYour OpenAI API key for processing the adversarial intent analysis (BYOK).Response Body (JSON)JSON{
-  "risk_score": 95,
-  "risk_level": "CRITICAL",
-  "decision": "BLOCK",
-  "reason": "🚨 CRITICAL: Deleted /home/user/app/db/prod.sql | This command permanently deletes a critical database file.",
-  "simulation_result": {
-    "observation": "(No console output)",
-    "impact_report": "CRITICAL: Deleted /home/user/app/db/prod.sql",
-    "exit_code": 0
-  }
-}
-🔒 Security & Privacy (BYOK)Evalshq operates on a strict Bring Your Own Key (BYOK) model.Zero Logging: We do not log or store your user_api_key in our databases. It is used strictly in-memory during the lifecycle of the request.Ephemeral Environments: The micro-VMs spun up to test your agent's code are physically destroyed immediately after the exit code is returned. No residual data survives.No Training: We do not use your agent's commands, payloads, or architecture to train underlying models.💻 Local Development & Self-HostingIf you wish to run the Nerion Engine locally for development:Clone the Repository:Bashgit clone [https://github.com/yourusername/nerionpro.git](https://github.com/yourusername/nerionpro.git)
-cd nerionpro
-Install Dependencies:Bashpip install -r requirements.txt
-Environment Setup:Create a .env file in the root directory:Code snippetE2B_API_KEY=your_sandbox_infrastructure_key
-Run the API:Bashcd src
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-⚖️ LicenseApache License 2.0Copyright 2026 Evalshq (Nerionpro)Licensed under the Apache License, Version 2.0 (the "License");you may not use this file except in compliance with the License.You may obtain a copy of the License athttp://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, softwaredistributed under the License is distributed on an "AS IS" BASIS,WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.See the License for the specific language governing permissions andlimitations under the License.
