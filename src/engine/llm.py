@@ -1,14 +1,15 @@
-from openai import OpenAI
+import os
 import json
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv() 
 
 def evaluate_with_llm(action_type: str, payload: str, api_key: str):
-    """
-    The Real Nerion Brain: Uses the customer's provided API key.
-    """
+    """The Real Nerion Brain: Uses the customer's BYOK api_key."""
     print(f"🧠 [LIVE AI ENGINE] Analyzing intent: {payload}")
     
     try:
-        # Initialize OpenAI with the key provided in the request
         client = OpenAI(api_key=api_key)
         
         prompt = f"""
@@ -32,13 +33,12 @@ def evaluate_with_llm(action_type: str, payload: str, api_key: str):
             model="gpt-4o-mini",
             messages=[{"role": "system", "content": prompt}],
             response_format={ "type": "json_object" },
-            temperature=0.0 # We want deterministic, cold logic
+            temperature=0.0
         )
         
         return json.loads(response.choices[0].message.content)
         
     except Exception as e:
-        # If their key is invalid or out of money, we auto-block the action
         print(f"⚠️ [ENGINE FAILURE] {str(e)}")
         return {
             "risk_score": 99,

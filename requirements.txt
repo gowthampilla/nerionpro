@@ -6,3 +6,4 @@ requests
 openai
 python-dotenv
 docker
+e2b_code_interpreter

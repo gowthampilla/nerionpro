@@ -1,57 +1,44 @@
-import docker
-import time
+from e2b_code_interpreter import Sandbox
+from dotenv import load_dotenv
+import os
 
-client = docker.from_env()
+load_dotenv()
 
 def run_in_sandbox(payload: str, context_files: list = None):
-    container_name = f"nerion-sandbox-{int(time.time())}"
+    print(f"🛠️ [E2B CLOUD] Initializing Sandbox...")
     
-    # 1. SETUP: Create Ghost Files (using double quotes for internal echo)
-    setup_cmd = ""
-    if context_files:
-        setup_parts = [f"mkdir -p $(dirname {f}) && touch {f}" for f in context_files]
-        setup_cmd = " && ".join(setup_parts) + ' && echo "---GHOST_FILES_CREATED---" && '
-
-    # 2. CHECK: Verify if files survived (using double quotes for internal echo)
-    # 2. CHECK: Verify if files survived
-    check_cmd = ""
-    if context_files:
-        check_parts = [f'([ -f {f} ] || echo "VERIFIED_DELETED:{f}")' for f in context_files]
-        check_cmd = " && ".join(check_parts)
-    
-    # --- NEW: Clean the payload to prevent double semicolons ---
-    clean_payload = payload.strip().rstrip(";")
-    
-    # 3. CONSTRUCT: The full shell script
-    full_cmd = f'sh -c "{setup_cmd} {clean_payload} ; echo ---RESULT--- ; {check_cmd}"'
-
-    print(f"🛠️ [SANDBOX] Executing Raw Script: {full_cmd}")
-
     try:
-        container = client.containers.run(
-            "alpine",
-            command=full_cmd,
-            name=container_name,
-            detach=True,
-            network_disabled=True,
-            mem_limit="64m"
-        )
-        
-        container.wait(timeout=5)
-        raw_logs = container.logs().decode("utf-8").strip()
-        
-        print(f"📄 [RAW SANDBOX LOGS]:\n{raw_logs}\n{'-'*30}")
-        
-        container.remove(force=True)
+        with Sandbox.create() as sb:
+            # 1. Setup Ghost Files (Safely creating folders first)
+            if context_files:
+                for file_path in context_files:
+                    sb.commands.run(f"mkdir -p $(dirname {file_path})")
+                    sb.files.write(file_path, "sensitive_data_v1")
 
-        # Parse logic: Look for our specific VERIFIED_DELETED tag
-        deleted = [line.split(":")[1] for line in raw_logs.split("\n") if "VERIFIED_DELETED:" in line]
+            # 2. Run the command
+            print(f"🚀 [E2B CLOUD] Executing: {payload}")
+            execution = sb.commands.run(payload)
+            
+            # 3. Check for deletion
+            deleted_files = []
+            if context_files:
+                for file_path in context_files:
+                    try:
+                        sb.files.read(file_path)
+                    except Exception:
+                        deleted_files.append(file_path)
 
-        return {
-            "status": "success",
-            "observation": raw_logs.split("---RESULT---")[0].strip() if "---RESULT---" in raw_logs else raw_logs,
-            "impact_report": f"DELETED: {', '.join(deleted)}" if deleted else "No files affected"
-        }
-
+            impact = f"CRITICAL: Deleted {', '.join(deleted_files)}" if deleted_files else "Safe"
+            
+            out_log = execution.stdout if execution.stdout else ""
+            err_log = execution.stderr if execution.stderr else ""
+            
+            return {
+                "observation": f"{out_log}\n{err_log}".strip(),
+                "impact_report": impact,
+                "exit_code": execution.exit_code
+            }
+            
     except Exception as e:
-        return {"status": "error", "observation": str(e), "impact_report": "Sandbox Crash"}
+        print(f"❌ [E2B ERROR] {str(e)}")
+        return {"observation": f"Sandbox Failed: {str(e)}", "impact_report": "ERROR"}

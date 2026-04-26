@@ -6,7 +6,7 @@ class AgentAction(BaseModel):
     action_type: str
     payload: str
     context_files: Optional[List[str]] = []
-    user_api_key: str  # <--- THE BYOK REQUIREMENT
+    user_api_key: str  # BYOK Requirement enforced
 
 class RiskEvaluation(BaseModel):
     risk_score: int
