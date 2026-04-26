@@ -42,7 +42,7 @@ You require zero local infrastructure. No Docker, no SSH keys. Just the standard
 import requests
 import os
 
-API_URL = "[https://nerionpro.onrender.com/api/v1/evaluate](https://nerionpro.onrender.com/api/v1/evaluate)"
+API_URL = "[https://nerionpro.onrender.com/api/v1/evaluate]
 
 payload = {
     "agent_id": "production-finance-agent",
