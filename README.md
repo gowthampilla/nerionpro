@@ -1,42 +1,65 @@
 # 🛡️ Evalshq: Nerion Decision Infrastructure
-**The Enterprise BYOK Pre-Execution Risk Engine for Autonomous AI Agents.**
 
-[![Live API](https://img.shields.io/badge/API-Live-success)](#) [![BYOK](https://img.shields.io/badge/Architecture-BYOK-blue)](#) [![Latency](https://img.shields.io/badge/Latency-~1200ms-orange)](#)
+**The Enterprise Pre-Execution Risk Engine for Autonomous AI Agents.**
 
-AI Agents are shipping to production, but they are flying blind. Evalshq is a "Digital Supreme Court" that sits between your agent's brain and your production environment. 
+[![Live API](https://img.shields.io/badge/API-Live-success)](#) [![Architecture](https://img.shields.io/badge/Architecture-BYOK-blue)](#) [![Latency](https://img.shields.io/badge/Latency-~1200ms-orange)](#) [![Status](https://img.shields.io/badge/Status-Production_Ready-green)](#)
 
-We intercept proposed actions, analyze intent, and detonate destructive payloads in an isolated cloud micro-VM to mathematically prove the blast radius—all before it ever touches your systems.
+Evalshq operates the **Nerion Engine**—a platform designed to bring absolute clarity to complex autonomous decisions. 
 
-## 🚀 The Zero-Friction Integration
+As AI agents ship to production, they are granted access to file systems, databases, and critical APIs. But agents hallucinate. They make destructive choices. Evalshq acts as a "Digital Supreme Court," intercepting agent commands, analyzing their intent, and detonating high-risk payloads in ephemeral cloud micro-VMs to mathematically prove the blast radius—all before the code ever touches your actual environment.
 
-You don't need to install Docker, configure sandboxes, or manage cloud permissions. If you have the `requests` library and an OpenAI API key, you are ready.
+---
 
-### Quick Start (Python / Jupyter / Colab)
+## 🧠 The Nerion Philosophy
+Nerion is built on the premise of **Trust through Adversarial Verification**. We do not trust the agent's internal logic. We force the agent to submit its proposed actions to an isolated, adversarial environment where state changes are monitored, logged, and audited in real-time.
 
-Drop this into your agent's decision loop to instantly secure its outputs.
+### Core Capabilities
+* **Adversarial Intent Analysis:** Before code runs, our LLM layer evaluates the semantic intent of the payload.
+* **Ephemeral Micro-VM Sandboxing:** If a command is flagged as `MEDIUM` risk or higher, it is deployed to a sterile, isolated Linux cloud environment.
+* **Forensic Impact Auditing:** We inject "Ghost Files" into the sandbox to mirror your production state, run the payload, and check if critical systems were altered or destroyed.
+* **Zero-Friction BYOK:** Bring Your Own Key architecture ensures your proprietary prompts and LLM keys are never stored on our servers.
+
+---
+
+## 🏗️ Architecture & Execution Flow
+
+When your agent proposes an action, the Nerion Engine executes a strict, 4-step protocol:
+
+1. **The Intercept (API Gateway):** Your agent sends the proposed command (e.g., `rm -rf /app/db/prod.sql`) and your OpenAI API key to the `/evaluate` endpoint.
+2. **Intent Evaluation (The Brain):** The engine uses your key to query an adversarial LLM, evaluating the command for destructive potential.
+3. **Cloud Detonation (The Sandbox):** If deemed risky, the engine connects to our cloud infrastructure, boots a secure micro-VM in <1 second, replicates your specified file paths, and executes the command.
+4. **The Verdict:** The engine audits the sandbox. If files were destroyed or state was altered unexpectedly, it returns a `BLOCKED` verdict with a full forensic log.
+
+---
+
+## 🚀 Quick Start Integration
+
+You require zero local infrastructure. No Docker, no SSH keys. Just the standard `requests` library.
+
+### Python Example
 
 ```python
 import requests
+import os
 
 API_URL = "[https://nerionpro.onrender.com/api/v1/evaluate](https://nerionpro.onrender.com/api/v1/evaluate)"
 
-# 1. Your agent proposes a command
-proposed_action = "rm -rf /app/db/prod.sql"
-
-# 2. Route it through the Nerion Pre-Execution Engine
-response = requests.post(API_URL, json={
-    "agent_id": "production-agent-01",
+payload = {
+    "agent_id": "production-finance-agent",
     "action_type": "shell",
-    "payload": proposed_action,
-    "context_files": ["/app/config/.env", "/app/db/prod.sql"], # Files to protect
-    "user_api_key": "sk-proj-your-openai-key-here" # BYOK Authentication
-})
+    "payload": "rm -rf /home/user/app/db/prod.sql",
+    "context_files": [
+        "/home/user/app/config/.env", 
+        "/home/user/app/db/prod.sql"
+    ],
+    "user_api_key": os.getenv("OPENAI_API_KEY") # BYOK Auth
+}
 
-# 3. Read the verdict
+response = requests.post(API_URL, json=payload)
 decision = response.json()
 
 if decision["decision"] == "ALLOW":
-    print("✅ Executing command safely...")
-    # Execute the command in your real environment
+    print("✅ Nerion Approved: Executing command...")
 else:
-    print(f"❌ BLOCKED: {decision['reason']}")
+    print(f"❌ Nerion Blocked: {decision['reason']}")
+    print(f"🔍 Forensic Audit: {decision['simulation_result']['impact_report']}")
