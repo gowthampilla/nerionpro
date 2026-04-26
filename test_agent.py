@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_URL = "http://localhost:8000/api/v1/evaluate"
+API_URL = "https://nerionpro.onrender.com/api/v1/evaluate"
 # Using realistic app directories so we don't crash the E2B Linux kernel
 # We use /home/user/ so the sandbox has permission to create these files
 CONTEXT = ["/home/user/app/config/.env", "/home/user/var/www/index.html", "/home/user/app/db/prod.sql"]
